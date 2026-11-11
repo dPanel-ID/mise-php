@@ -1,6 +1,7 @@
 local env = require("lib/env")
 local source_php = require("lib/source_php")
 local static_php = require("lib/static_php")
+local dpanel_php = require("lib/dpanel_php")
 local php_packages = require("lib/php_packages")
 local php_versions = require("lib/php_versions")
 local windows_php = require("lib/windows_php")
@@ -49,6 +50,10 @@ local function install_php_runtime(sdkPath, version)
 
     if RUNTIME.osType == "windows" then
         return windows_php.install(sdkPath, version)
+    end
+
+    if dpanel_php.is_installed(sdkPath) then
+        return dpanel_php.install(sdkPath, version)
     end
 
     return source_php.install(sdkPath, version)

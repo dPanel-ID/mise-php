@@ -236,6 +236,31 @@ For permanent or one-time disabling, see [Skip dependency installation](#skip-de
 
 `bin/install-dependencies.sh` remains the authoritative source-build dependency installer. It is path-aware and can inspect the requested PHP version, custom configure options, requested PECL/PIE extensions, distro family, repository setup, and version-specific fallbacks such as newer `re2c` on older Enterprise Linux releases. Source-build verification and post-install tooling fail inside the plugin installer when required Composer, PIE, PECL, or extension setup fails.
 
+### dPanel prebuilt PHP (Debian and Ubuntu)
+
+On Debian and Ubuntu, this fork first looks for a prebuilt release of the
+requested version in [devetek/php-binary](https://github.com/devetek/php-binary):
+PHP built in CI by this same plugin for each OS release (Ubuntu 22.04, 24.04,
+26.04, Debian 12, 13) and CPU (amd64, arm64), with OPcache and the igbinary,
+apcu, redis, imagick and memcached extensions. When one matches, mise downloads
+it (checked against its SHA-256) instead of compiling, and the plugin installs
+only the OS packages it links to, listed in its `runtime-packages.txt`. No
+compiler is installed. Without a matching release it builds from source as
+usual.
+
+The releases are built for `/usr/local/share/mise/installs/php/<version>`,
+where `mise install --system` installs, so one copy serves every user of the
+server:
+
+```bash
+sudo mise install --system php@8.4
+```
+
+Installed anywhere else, the plugin points PHP at its own `php.ini`,
+`conf.d` and extensions (`PHPRC`, `PHP_INI_SCAN_DIR`, `extension_dir`).
+
+Set `PHP_DPANEL_PREBUILT=0` to always build from source.
+
 ### Prebuilt static PHP
 
 By default, Linux and macOS installs build PHP from source, while Windows uses the regular windows.php.net binary installer. If you prefer faster static builds and can accept a smaller version set, enable prebuilt static PHP binaries. When enabled, the default static-php-cli flavor uses the broadest available extension set for the current platform: `bulk` on Linux/macOS and `spc-max` on Windows.
@@ -521,11 +546,14 @@ This plugin sets the following environment variables:
 | `PATH` | Windows | `<install_dir>` |
 | `PATH` | macOS, Linux | `<install_dir>/bin`, `<install_dir>/sbin` |
 | `LD_LIBRARY_PATH` | Linux only | `<install_dir>/lib` |
+| `PHPRC`, `PHP_INI_SCAN_DIR` | Linux only | `<install_dir>`, `<install_dir>/conf.d`, for a dPanel prebuilt release installed outside the path it was built for |
 
 The following installation options can be set through `mise config set env._.php.<option> ...` or the `[env] _.php = { ... }` table in `mise.toml`:
 
 | Option | Environment variable | Default | Description |
 |---|---|---|---|
+| — | `PHP_DPANEL_PREBUILT` | `true` | Use dPanel prebuilt releases on Debian and Ubuntu when one matches; `0` builds from source. |
+| — | `PHP_DPANEL_RELEASES_URL` | `https://github.com/devetek/php-binary/releases/download` | Where dPanel prebuilt releases are downloaded from. |
 | `prebuilt_static` | `PHP_PREBUILT_STATIC` | `false` | Use prebuilt static PHP binaries instead of source builds on supported platforms. |
 | `prebuilt_static_flavor` | `PHP_PREBUILT_STATIC_FLAVOR` | `bulk` | Select the static-php-cli binary flavor. Defaults to the largest flavor: `bulk` on Linux/macOS and `spc-max` on Windows. |
 | `skip_deps` | `PHP_SKIP_DEPS` | `false` | Skip automatic build dependency installation for source builds. |

@@ -1,6 +1,7 @@
 local env = require("lib/env")
 local logs = require("lib/logs")
 local static_php = require("lib/static_php")
+local dpanel_php = require("lib/dpanel_php")
 local php_versions = require("lib/php_versions")
 local process = require("lib/process")
 local tools = require("lib/tools")
@@ -43,6 +44,11 @@ function PLUGIN:PreInstall(ctx)
 
     if RUNTIME.osType == "windows" then
         return get_release_for_windows(release)
+    end
+
+    local prebuilt = dpanel_php.release(release.version)
+    if prebuilt then
+        return prebuilt
     end
 
     version_check_before_dependencies(release)
