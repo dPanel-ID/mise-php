@@ -35,9 +35,19 @@ function M.asset_name(version)
     if RUNTIME.osType ~= "linux" then
         return nil
     end
-    local release = os_release()
     local arch = arch_name()
-    if (release.ID ~= "ubuntu" and release.ID ~= "debian") or not release.VERSION_ID or not arch then
+    if not arch then
+        return nil
+    end
+    -- PHP 8.0 and older carry their own libraries (OpenSSL 1.x, old ICU), so
+    -- one build per CPU runs on any glibc Linux.
+    local major, minor = string.match(version, "^(%d+)%.(%d+)")
+    major, minor = tonumber(major) or 0, tonumber(minor) or 0
+    if major < 8 or (major == 8 and minor == 0) then
+        return "php-" .. version .. "-linux-" .. arch .. ".tar.xz"
+    end
+    local release = os_release()
+    if (release.ID ~= "ubuntu" and release.ID ~= "debian") or not release.VERSION_ID then
         return nil
     end
     return "php-" .. version .. "-" .. release.ID .. "-" .. release.VERSION_ID .. "-" .. arch .. ".tar.xz"

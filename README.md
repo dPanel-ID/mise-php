@@ -245,7 +245,9 @@ PHP built in CI by this same plugin for each OS release (Ubuntu 22.04, 24.04,
 apcu, redis, imagick and memcached extensions. When one matches, mise downloads
 it (checked against its SHA-256) instead of compiling, and the plugin installs
 only the OS packages it links to, listed in its `runtime-packages.txt`. No
-compiler is installed. Without a matching release it builds from source as
+compiler is installed. PHP 8.0, 7.4, 7.3 and 5.6 releases carry their own
+libraries (OpenSSL 1.x, old ICU), so one build per CPU runs on any glibc
+Linux and installs no packages. Without a matching release it builds from source as
 usual.
 
 The releases are built for `/usr/local/share/mise/installs/php/<version>`,
