@@ -564,7 +564,17 @@ function source_php.install(sdkPath, version)
     -- so pin affected older PHP builds to GNU17.
     if major < 8 or (major == 8 and minor <= 2) then
         local existing_cflags = os.getenv("CFLAGS") or ""
-        local cflags_val = "-std=gnu17"
+        -- Compilers older than GCC 8 do not know gnu17; they default to
+        -- gnu11, which these sources build with.
+        local std = "gnu17"
+        local probe = os.execute("echo 'int main(void){return 0;}' | ${CC:-cc} -std=gnu17 -x c - -o /dev/null > /dev/null 2>&1")
+        if probe ~= true and probe ~= 0 then
+            std = "gnu11"
+        end
+        -- Setting CFLAGS replaces configure's default "-g -O2", so keep the
+        -- optimization (an unoptimized PHP runs about 3x slower, and PHP 5.6
+        -- on arm64 does not even assemble without it).
+        local cflags_val = "-std=" .. std .. " -g -O2"
         if existing_cflags ~= "" then
             cflags_val = cflags_val .. " " .. existing_cflags
         end

@@ -123,7 +123,9 @@ function mcrypt_check_for_linux(release)
         return
     end
 
-    local mcrypt_found = os.execute("pkg-config --exists libmcrypt 2>/dev/null")
+    -- Older distributions (e.g. Ubuntu 16.04) ship libmcrypt-dev without a
+    -- pkg-config file; its header is enough for PHP's configure.
+    local mcrypt_found = os.execute("pkg-config --exists libmcrypt 2>/dev/null || [ -f /usr/include/mcrypt.h ]")
     if mcrypt_found ~= 0 and mcrypt_found ~= true then
         error(
             "\n\nPHP " .. release.version .. " requires libmcrypt, which was not found on this system.\n\n" ..
