@@ -564,11 +564,25 @@ function source_php.install(sdkPath, version)
     -- so pin affected older PHP builds to GNU17.
     if major < 8 or (major == 8 and minor <= 2) then
         local existing_cflags = os.getenv("CFLAGS") or ""
-        local cflags_val = "-std=gnu17"
+        -- Compilers older than GCC 8 do not know gnu17; they default to
+        -- gnu11, which these sources build with.
+        local std = "gnu17"
+        local probe = os.execute("echo 'int main(void){return 0;}' | ${CC:-cc} -std=gnu17 -x c - -o /dev/null > /dev/null 2>&1")
+        if probe ~= true and probe ~= 0 then
+            std = "gnu11"
+        end
+        -- Setting CFLAGS replaces configure's default "-g -O2", so keep the
+        -- optimization (an unoptimized PHP runs about 3x slower, and PHP 5.6
+        -- on arm64 does not even assemble without it).
+        local cflags_val = "-std=" .. std .. " -g -O2"
         if existing_cflags ~= "" then
             cflags_val = cflags_val .. " " .. existing_cflags
         end
         envPrefix = export_env_var(envPrefix, "CFLAGS", cflags_val)
+    end
+
+    if os_type ~= "darwin" then
+        configureOptions = legacy_configure_options(configureOptions, expectedExtensions, major, minor)
     end
 
     envPrefix = apply_platform_build_flags(envPrefix, version)
@@ -679,7 +693,7 @@ function source_php.install(sdkPath, version)
     os.execute("mkdir -p " .. shell_quote(sdkPath .. "/conf.d"))
     local confFile = io.open(sdkPath .. "/conf.d/php.ini", "w")
     if confFile then
-        confFile:write("# Add system-wide PHP configuration options here\n")
+        confFile:write("; Add system-wide PHP configuration options here\n")
         confFile:close()
     end
 
@@ -877,6 +891,37 @@ function configure_macos(configureOptions, homebrew_prefix, expectedExtensions)
     end
 
     return configureOptions, envPrefix
+end
+
+--- Spells the default options the way PHP 7.3 and older expect them: GD and
+--- zip use their pre-7.4 flags (bundled GD with the system image libraries),
+--- and sodium only exists from PHP 7.2.
+function legacy_configure_options(configureOptions, expectedExtensions, major, minor)
+    local function drop_expected(name)
+        for index = #expectedExtensions, 1, -1 do
+            if expectedExtensions[index] == name then
+                table.remove(expectedExtensions, index)
+            end
+        end
+    end
+    local function replace_option(from, to)
+        configureOptions = (" " .. configureOptions .. " "):gsub(" " .. from:gsub("%p", "%%%0") .. " ", " " .. to .. " ")
+        configureOptions = configureOptions:gsub("^%s+", ""):gsub("%s+$", "")
+    end
+
+    if major < 7 or (major == 7 and minor < 4) then
+        replace_option("--with-external-gd", "")
+        replace_option("--enable-gd", "--with-gd --with-jpeg-dir=/usr --with-png-dir=/usr --with-freetype-dir=/usr")
+        if major >= 7 then
+            configureOptions = configureOptions .. " --with-webp-dir=/usr"
+        end
+        replace_option("--with-zip", "--enable-zip")
+    end
+    if major < 7 or (major == 7 and minor < 2) then
+        replace_option("--with-sodium", "")
+        drop_expected("sodium")
+    end
+    return configureOptions
 end
 
 --- Configure options for Linux
