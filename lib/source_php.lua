@@ -581,6 +581,10 @@ function source_php.install(sdkPath, version)
         envPrefix = export_env_var(envPrefix, "CFLAGS", cflags_val)
     end
 
+    if os_type ~= "darwin" then
+        configureOptions = legacy_configure_options(configureOptions, expectedExtensions, major, minor)
+    end
+
     envPrefix = apply_platform_build_flags(envPrefix, version)
 
     -- Allow user to append configure options
@@ -689,7 +693,7 @@ function source_php.install(sdkPath, version)
     os.execute("mkdir -p " .. shell_quote(sdkPath .. "/conf.d"))
     local confFile = io.open(sdkPath .. "/conf.d/php.ini", "w")
     if confFile then
-        confFile:write("# Add system-wide PHP configuration options here\n")
+        confFile:write("; Add system-wide PHP configuration options here\n")
         confFile:close()
     end
 
@@ -887,6 +891,37 @@ function configure_macos(configureOptions, homebrew_prefix, expectedExtensions)
     end
 
     return configureOptions, envPrefix
+end
+
+--- Spells the default options the way PHP 7.3 and older expect them: GD and
+--- zip use their pre-7.4 flags (bundled GD with the system image libraries),
+--- and sodium only exists from PHP 7.2.
+function legacy_configure_options(configureOptions, expectedExtensions, major, minor)
+    local function drop_expected(name)
+        for index = #expectedExtensions, 1, -1 do
+            if expectedExtensions[index] == name then
+                table.remove(expectedExtensions, index)
+            end
+        end
+    end
+    local function replace_option(from, to)
+        configureOptions = (" " .. configureOptions .. " "):gsub(" " .. from:gsub("%p", "%%%0") .. " ", " " .. to .. " ")
+        configureOptions = configureOptions:gsub("^%s+", ""):gsub("%s+$", "")
+    end
+
+    if major < 7 or (major == 7 and minor < 4) then
+        replace_option("--with-external-gd", "")
+        replace_option("--enable-gd", "--with-gd --with-jpeg-dir=/usr --with-png-dir=/usr --with-freetype-dir=/usr")
+        if major >= 7 then
+            configureOptions = configureOptions .. " --with-webp-dir=/usr"
+        end
+        replace_option("--with-zip", "--enable-zip")
+    end
+    if major < 7 or (major == 7 and minor < 2) then
+        replace_option("--with-sodium", "")
+        drop_expected("sodium")
+    end
+    return configureOptions
 end
 
 --- Configure options for Linux
