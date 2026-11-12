@@ -77,6 +77,9 @@ local PECL_EXTENSIONS = parse_pecl_extensions()
 local PIE_EXTENSIONS  = parse_pie_extensions()
 local PREBUILT_STATIC = is_enabled("PHP_PREBUILT_STATIC")
 local PREBUILT_STATIC_FLAVOR = os.getenv("PHP_PREBUILT_STATIC_FLAVOR") or ""
+-- dPanel prebuilt releases are used unless PHP_DPANEL_PREBUILT is 0 or false.
+local DPANEL_PREBUILT = os.getenv("PHP_DPANEL_PREBUILT") == nil or is_enabled("PHP_DPANEL_PREBUILT")
+local DPANEL_RELEASES_URL = os.getenv("PHP_DPANEL_RELEASES_URL") or "https://github.com/devetek/php-binary/releases/download"
 
 return {
     VERBOSE         = VERBOSE,
@@ -86,4 +89,6 @@ return {
     PIE_EXTENSIONS  = PIE_EXTENSIONS,
     PREBUILT_STATIC = PREBUILT_STATIC,
     PREBUILT_STATIC_FLAVOR = PREBUILT_STATIC_FLAVOR,
+    DPANEL_PREBUILT = DPANEL_PREBUILT,
+    DPANEL_RELEASES_URL = DPANEL_RELEASES_URL,
 }

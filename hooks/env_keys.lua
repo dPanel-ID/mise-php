@@ -25,6 +25,11 @@ function PLUGIN:EnvKeys(ctx)
             value = installDir .. "/sbin",
         })
 
+        -- A dPanel build used outside the path it was built for.
+        for _, item in ipairs(require("lib/dpanel_php").env_keys(installDir)) do
+            table.insert(envs, item)
+        end
+
         -- Add LD_LIBRARY_PATH on Linux
         if RUNTIME.osType == "linux" then
           table.insert(envs, {
