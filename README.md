@@ -261,7 +261,9 @@ sudo mise install --system php@8.4
 Installed anywhere else, the plugin points PHP at its own `php.ini`,
 `conf.d` and extensions (`PHPRC`, `PHP_INI_SCAN_DIR`, `extension_dir`).
 
-Set `PHP_DPANEL_PREBUILT=0` to always build from source.
+Set `PHP_DPANEL_PREBUILT=0` to always build from source, or
+`PHP_DPANEL_PREBUILT_ONLY=1` to never build from source (servers where
+compiling costs too much): without a matching release the install fails.
 
 ### Prebuilt static PHP
 
@@ -555,6 +557,7 @@ The following installation options can be set through `mise config set env._.php
 | Option | Environment variable | Default | Description |
 |---|---|---|---|
 | — | `PHP_DPANEL_PREBUILT` | `true` | Use dPanel prebuilt releases on Debian and Ubuntu when one matches; `0` builds from source. |
+| — | `PHP_DPANEL_PREBUILT_ONLY` | `false` | Never build from source: fail when no dPanel prebuilt release matches the server. |
 | — | `PHP_DPANEL_RELEASES_URL` | `https://github.com/devetek/php-binary/releases/download` | Where dPanel prebuilt releases are downloaded from. |
 | `prebuilt_static` | `PHP_PREBUILT_STATIC` | `false` | Use prebuilt static PHP binaries instead of source builds on supported platforms. |
 | `prebuilt_static_flavor` | `PHP_PREBUILT_STATIC_FLAVOR` | `bulk` | Select the static-php-cli binary flavor. Defaults to the largest flavor: `bulk` on Linux/macOS and `spc-max` on Windows. |

@@ -79,6 +79,8 @@ local PREBUILT_STATIC = is_enabled("PHP_PREBUILT_STATIC")
 local PREBUILT_STATIC_FLAVOR = os.getenv("PHP_PREBUILT_STATIC_FLAVOR") or ""
 -- dPanel prebuilt releases are used unless PHP_DPANEL_PREBUILT is 0 or false.
 local DPANEL_PREBUILT = os.getenv("PHP_DPANEL_PREBUILT") == nil or is_enabled("PHP_DPANEL_PREBUILT")
+-- With PHP_DPANEL_PREBUILT_ONLY set, never compile: fail without a release.
+local DPANEL_PREBUILT_ONLY = is_enabled("PHP_DPANEL_PREBUILT_ONLY")
 local DPANEL_RELEASES_URL = os.getenv("PHP_DPANEL_RELEASES_URL") or "https://github.com/devetek/php-binary/releases/download"
 
 return {
@@ -91,4 +93,5 @@ return {
     PREBUILT_STATIC_FLAVOR = PREBUILT_STATIC_FLAVOR,
     DPANEL_PREBUILT = DPANEL_PREBUILT,
     DPANEL_RELEASES_URL = DPANEL_RELEASES_URL,
+    DPANEL_PREBUILT_ONLY = DPANEL_PREBUILT_ONLY,
 }

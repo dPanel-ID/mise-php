@@ -50,6 +50,14 @@ function PLUGIN:PreInstall(ctx)
     if prebuilt then
         return prebuilt
     end
+    if env.DPANEL_PREBUILT_ONLY then
+        error(
+            "\n\nNo prebuilt PHP " .. release.version .. " for this server" ..
+            " (" .. tostring(dpanel_php.asset_name(release.version) or "unsupported OS or CPU") .. ").\n" ..
+            "PHP_DPANEL_PREBUILT_ONLY is set, so it is not compiled here.\n" ..
+            "Available builds: https://github.com/devetek/php-binary/releases\n"
+        )
+    end
 
     version_check_before_dependencies(release)
 
